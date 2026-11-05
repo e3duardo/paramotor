@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#3f86d4" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Paramotor" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" href="./icons/icon-192.png" />
+  <title>Paramotor Miracema</title>
+  <script type="module" crossorigin src="./assets/index-Czw7aYto.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/vendor-2zMdSwYe.js">
+  <link rel="stylesheet" crossorigin href="./assets/index-BVmN_jF1.css">
+</head>
+<body>
+  <canvas id="c"></canvas>
+
+  <div id="hud">
+    <div id="stats">
+      <div class="main">
+        <div><span>ALT</span><b id="h-alt">0</b><i>m</i></div>
+        <div><span>VAR</span><b id="h-var">0.0</b><i>m/s</i></div>
+        <div><span>VEL</span><b id="h-spd">0</b><i>km/h</i></div>
+      </div>
+      <div class="sub">
+        <span>vento <b id="h-wind">0</b> km/h <em id="wind-arrow">↑</em></span>
+        <span class="fuel">comb. <b id="h-fuel">100</b>%</span>
+        <span>G <b id="h-g">1.0</b></span>
+        <span>pontos <b id="h-score">0</b></span>
+        <span id="h-clock" class="hidden">🕐 <b></b> <i></i></span>
+      </div>
+    </div>
+    <div id="right-top">
+      <div id="topbar">
+        <button id="b-share" class="hidden" title="Quem está voando na sala">👥</button>
+        <button id="b-radio" class="hidden" title="Ligar/desligar a fonia (voz com os outros pilotos)">🎙</button>
+        <button id="b-cam" title="Trocar câmera (C)">🎥</button>
+        <button id="b-photo" title="Modo foto: esconde a tela, os controles continuam funcionando (H)">📷</button>
+        <button id="b-pause" title="Pausar (P ou Esc)">⏸</button>
+        <button id="b-opts" title="Opções">⚙</button>
+      </div>
+      <canvas id="minimap"></canvas>
+    </div>
+    <div id="toast"></div>
+    <div id="auto"></div>
+    <div id="hint"></div>
+    <div id="brakes"><div><div id="brake-l"></div></div><span>FREIOS</span><div><div id="brake-r"></div></div></div>
+    <div id="loading" class="hidden">Carregando o relevo de Miracema…</div>
+  </div>
+
+  <button id="b-photo-exit" title="Sair do modo foto (H)">📷</button>
+
+  <div id="pilots" class="hidden">
+    <div class="head"><b>Na sala <span id="pl-code"></span></b><button id="pl-close" title="Fechar">✕</button></div>
+    <ul id="pl-list"></ul>
+    <button id="pl-invite">Convidar (compartilhar link)</button>
+  </div>
+
+  <div id="opts" class="hidden">
+    <div class="head"><b>Opções</b><button id="opts-close" title="Fechar">✕</button></div>
+    <div class="row"><span>Som</span><button id="b-mute" class="pill">Ligado</button></div>
+    <div class="row col"><span>Controle dos freios</span>
+      <div class="seg"><button data-ctl="joy">Joystick</button><button data-ctl="split">Freios separados</button></div>
+      <small id="ctl-help"></small>
+    </div>
+    <div class="row col"><div class="row-in"><span>Clima e hora reais</span><button id="b-clima" class="pill off">Desligado</button></div>
+      <small id="clima-info">Céu, chuva e hora de Miracema agora (dados: Open-Meteo)</small>
+    </div>
+    <div class="row col" id="row-tempo"><div class="row-in"><span>Tempo real</span><button id="b-tempo" class="pill">Ligado</button></div>
+      <div class="seg hidden" id="seg-tscale"><button data-ts="12">12×</button><button data-ts="24">24×</button><button data-ts="60">60×</button></div>
+      <small id="tempo-help"></small>
+    </div>
+    <div class="row col"><div class="row-in"><span>🪂 Controle de vela</span><button id="b-kite" class="pill off">Entrar</button></div>
+      <small id="kite-info">Treino no chão, sem o motor: levante a vela com os A e segure ela em cima da cabeça nos freios. Os pés andam inclinando o celular.</small>
+    </div>
+    <div class="row"><span>Recorde</span><b id="h-best">0</b></div>
+    <button id="b-reset" class="wide">↺ Recomeçar na pista</button>
+  </div>
+
+  <div id="touch">
+    <div id="joy"><div id="joy-knob"></div><span class="lbl l">◀ freio esq</span><span class="lbl r">freio dir ▶</span><span class="lbl d">▼ os dois</span></div>
+    <div id="brake-left" class="bslider"><div class="fill"></div><span>FREIO E</span></div>
+    <div id="brake-right" class="bslider"><div class="fill"></div><span>FREIO D</span></div>
+    <div id="trim-left" class="tslider"><div class="fill"></div><span>TRIM</span></div>
+    <div id="trim-right" class="tslider"><div class="fill"></div><span>TRIM</span></div>
+    <div id="right-pad">
+      <div id="moves-wrap">
+        <div id="moves" class="hidden">
+          <button data-maneuver="sat">SAT<small>120 m</small></button>
+          <button data-maneuver="espiral">Espiral<small>200 m</small></button>
+          <button data-maneuver="barrel">Barrel roll<small>120 m</small></button>
+          <button data-maneuver="helico">Helico<small>150 m</small></button>
+          <button data-maneuver="dolphin">Dolphin<small>50 m</small></button>
+        </div>
+        <button id="b-moves">🌀<small>Manobras</small></button>
+      </div>
+      <div id="aux">
+        <div id="trims"><button id="b-trim-l">TRIM E 0% ▲</button><button id="b-trim-r">TRIM D 0% ▲</button></div>
+        <button id="b-bar">ACEL</button>
+        <button id="b-engine">⏻</button>
+      </div>
+      <div id="throttle"><div id="throttle-fill"></div><span id="throttle-pct">0%</span><em>MOTOR</em></div>
+    </div>
+  </div>
+
+  <div id="inflate"><button id="b-inflate">INFLAR</button><button id="b-reverse">Alpina · tocar p/ trocar ⇄</button></div>
+
+  <div id="kite">
+    <div id="kite-top"><b id="k-time">0,0 s</b><span>recorde <b id="k-best">0,0 s</b> · vento <b id="k-wind">0</b> km/h</span></div>
+    <div id="kite-btns"><button id="k-exit">✕ Sair</button><button id="k-zero" title="O celular na posição de agora vira o 'parado'">⊙ Zerar inclinação</button><button id="k-turn">⟲ VIRAR</button></div>
+    <div id="kpad-l" class="kpad"><span class="t">▲ A</span><div class="knob"></div><span class="b">FREIO E ▼</span></div>
+    <div id="kpad-r" class="kpad"><span class="t">▲ A</span><div class="knob"></div><span class="b">FREIO D ▼</span></div>
+    <div id="k-tilt"><i></i><span>pés</span></div>
+  </div>
+
+  <div id="pause" class="hidden"><div class="card"><h2>Pausado</h2><button id="b-resume">Continuar</button></div></div>
+
+  <div id="start">
+    <div class="card">
+      <h1>Paramotor<span>Miracema · RJ</span></h1>
+      <div id="ios-hint">
+        <b>Tela cheia no iPhone:</b> o Safari e o Chrome do iPhone não deixam um site ocupar a tela toda. Instale
+        como app: toque em <b>Compartilhar</b> <span class="ios-share">⬆︎</span> (no Chrome fica na barra de endereço) →
+        <b>Adicionar à Tela de Início</b>, e abra pelo ícone <i>Paramotor</i>: aí ele abre em tela cheia, sem barras.
+      </div>
+      <p>Vela SKY Zorro 22 com física real: cada célula da vela tem sua aerodinâmica. Dá para fazer as manobras na mão, só com os freios, ou pelos botões, que pilotam os freios por você. Quanto mais seguidas, maior o combo.</p>
+      <div class="help touch-help">
+        <div><b>Decolagem:</b> a vela começa estendida atrás. escolha a decolagem no botão embaixo do INFLAR (no teclado, B): <b>alpina</b> (de costas para a vela, você corre; freie leve quando ela chegar em cima) ou <b>invertida</b> (de frente para a vela: o piloto puxa as A, recua e vira sozinho). Depois acelere e corra</div>
+        <div><b>Freios:</b> joystick (esq.): lado = curva (o corpo inclina junto), para baixo = os dois (arredonda o pouso). Nas opções ⚙ dá para trocar por <b>freios separados</b>: um em cada canto da tela, puxe para baixo</div>
+        <div><b>MOTOR (dir.)</b> acelerador · <b>TRIM E / TRIM D</b> soltam o trimmer de cada lado de 10% em 10% (começa todo puxado; solto = mais rápido, sobe menos; solto ≥50% vira tip steering) · <b>ACEL</b> acelerador de pé · <b>⏻</b> liga/desliga o motor</div>
+        <div><b>Ar de verdade:</b> vento (veja a biruta), rajadas, térmicas nas encostas ao sol, ascendente de encosta e rotor atrás dos morros. A vela pode fechar (colapso): bombeie o freio do lado fechado. <b>Urubus girando</b> perto da pista marcam a térmica forte: sobe bem, mas é turbulenta</div>
+        <div><b>Na mão:</b> um freio fundo = SAT/giro · meio freio de um lado = espiral · os dois no fundo = estol · balanço lado a lado = wingover/barrel roll · bombear os dois = dolphin</div>
+        <div><b>Câmera:</b> arraste na tela para girar em volta do piloto, pinça para zoom, toque duplo volta ao normal; 🎥 troca de câmera · 📷 <b>modo foto</b>: some tudo da tela e os controles continuam no mesmo lugar · <b>Mapa:</b> toque nele para alternar entre perto, Miracema e a região</div>
+        <div><b>🌀 Manobras</b> abre os botões que fazem a manobra pelos freios (toque de novo para cancelar; segure o freio esquerdo para girar para o outro lado)</div>
+      </div>
+      <div class="help key-help">
+        <div><b>W/S ou ↑/↓</b> acelerador · <b>Shift</b> motor no máximo</div>
+        <div><b>A/D ou ←/→</b> freio esquerdo/direito (segurar aprofunda) · <b>Espaço</b> os dois freios · <b>Q/E</b> peso</div>
+        <div><b>I</b> inflar · <b>B</b> alpina/invertida · <b>T / G</b> solta / puxa o trimmer (10%) · <b>F</b> acelerador de pé · <b>Z/X</b> tip steering · <b>K</b> motor liga/desliga</div>
+        <div><b>1–5</b> SAT, Espiral, Barrel roll, Helicóptero, Dolphin · <b>C</b> câmera (arraste para girar, roda = zoom, duplo clique volta) · clique no mapa: perto/inteiro · <b>H</b> modo foto · <b>R</b> recomeçar · <b>P/Esc</b> pausa</div>
+      </div>
+      <div id="mp">
+        <input id="mp-name" type="text" maxlength="14" placeholder="Seu apelido" autocomplete="off" />
+        <button id="mp-create" class="alt">👥 Voar com amigos</button>
+        <div id="mp-room" class="hidden">
+          <div><b id="mp-code"></b><span id="mp-count"></span></div>
+          <div class="row"><button id="mp-share" class="alt">Compartilhar link</button><button id="mp-leave" class="alt">Sair da sala</button></div>
+          <small>Quem abrir o link entra na sala. Dentro do jogo, o botão 🎙 liga a fonia (começa desligada).</small>
+        </div>
+      </div>
+      <button id="b-start">Voar</button>
+      <p class="credits">Relevo: ANADEM (ANA/UFRGS) · Satélite: <a href="https://s2maps.eu" target="_blank" rel="noopener">Sentinel-2 cloudless 2025</a> by EOX IT Services GmbH (contém dados Copernicus Sentinel modificados, 2025), CC BY-NC-SA 4.0 · Ruas: © colaboradores do OpenStreetMap · Tempo: <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo.com</a> (CC BY 4.0)</p>
+      <p class="version" id="version"></p>
+    </div>
+  </div>
+
+</body>
+</html>
